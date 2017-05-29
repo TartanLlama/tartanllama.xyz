@@ -1,0 +1,47 @@
+body {
+    font-family: 'Roboto', sans-serif;
+    background: #fafafa;
+}
+
+#main {
+    padding: 50px 300px;
+}
+
+.col {
+
+}
+
+img {
+    width: 100%;
+}
+
+.project {
+    padding: 15px;
+    border-radius: 10px;
+    border-style: solid;
+    border-top-width: 1px;
+    border-left-width: 0px;
+    border-right-width: 0px;
+    border-bottom-width: 1px;
+    font-size: 1rem;
+    margin-bottom: 20px;
+}
+
+.project p {
+    margin-bottom: 20px;
+    margin-top: 0px;
+}
+
+h2 {
+    margin-top: 0px;
+}
+
+.gh-link {
+    font-size: 3rem !important;
+    margin-bottom: 0px !important;
+    text-align: center;
+}
+
+.intro {
+    font-size: 1.3rem;
+}
