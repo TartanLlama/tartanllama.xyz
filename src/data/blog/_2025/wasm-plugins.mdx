@@ -659,7 +659,7 @@ The execution of WebAssembly components is backed by JIT compilation, which give
 
 However, since the sandbox around components disallows the sharing of memory, applications with latency constraints that would prefer to pass shared buffers of data around for plugins to operate on would need to consider alternative options. They could for example use [resources](https://github.com/WebAssembly/component-model/blob/main/design/mvp/WIT.md#item-resource) and function-based manipulations of those buffers, but that comes with additional overhead.
 
-As such, if your host has to share a lot of data with plugins without copying, the Wasm component model may not be the best fit for your application.
+As such, if your host has to share a lot of data with plugins without copying, the Wasm component model in its current state may not be the best fit for your application. There is ongoing work in this area, however [...to get feedback from people who know what they're talking about].
 
 ## Conclusion
 
