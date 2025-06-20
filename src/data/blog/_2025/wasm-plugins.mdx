@@ -645,6 +645,16 @@ With this run, you can copy the resulting component into Guy Fighter's plugin di
 
 ![Updated version of Guy Fighter that shows the data from the JS component as well as the C one](@/assets/images/wasm-plugins/guy-fighter-3.png)
 
+## Limitations
+
+Of course, nothing comes for free.
+
+The execution of WebAssembly components is backed by JIT compilation, which gives runtime performance [approaching that of native code](https://00f.net/2023/01/04/webassembly-benchmark-2023/).
+
+However, since the sandbox around components disallows the sharing of memory, applications with latency constraints that would prefer to pass shared buffers of data around for plugins to operate on would need to consider alternative options. They could for example use [resources](https://github.com/WebAssembly/component-model/blob/main/design/mvp/WIT.md#item-resource) and function-based manipulations of those buffers, but that comes with additional overhead.
+
+As such, if your host has to share a lot of data with plugins without copying, the Wasm component model may not be the best fit for your application.
+
 ## Conclusion
 
 We successfully built a plugin system for a game that is secure and has well-defined interfaces at the source and binary level. You can find the full code for Guy Fighter [on GitHub](https://github.com/TartanLlama/guy-fighter). Stay tuned for more posts about the Wasm component model.
