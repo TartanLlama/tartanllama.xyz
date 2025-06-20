@@ -10,15 +10,15 @@ canonicalURL: https://tartanllama.xyz/posts/wasm-plugins
 description: Sandboxed plugins with well-defined interfaces
 ---
 
-import ThemedImage from '@components/ThemedImage.astro';
-import shared_libs_dark from '@assets/images/wasm-plugins/shared-libs.dark.svg';
-import shared_libs_light from '@assets/images/wasm-plugins/shared-libs.light.svg';
-import components_dark from '@assets/images/wasm-plugins/components.dark.svg';
-import components_light from '@assets/images/wasm-plugins/components.light.svg';
+import ThemedImage from "@components/ThemedImage.astro";
+import shared_libs_dark from "@assets/images/wasm-plugins/shared-libs.dark.svg";
+import shared_libs_light from "@assets/images/wasm-plugins/shared-libs.light.svg";
+import components_dark from "@assets/images/wasm-plugins/components.dark.svg";
+import components_light from "@assets/images/wasm-plugins/components.light.svg";
 
 When shipping software, we often want to enable user-driven customisation and extension. For example, we could support custom instruments for our audio application, or user-created content for our video game. To support non-programmer users and closed-source development, we should allow these customisations to be loaded at runtime rather than requiring that they be compiled into the application. This is often achieved through _plugins_, which are code and data packages that users place in some designated plugin directory in their filesystem. The application that they're using, known as the _host_, loads these plugins and interacts with them in an application-defined manner to run the code in the plugin and transfer any necessary data.
 
-There are several common issues with _native_ plugin systems---ones that load machine code plugins that were likely written in a compiled language like C++ or Rust. Three big problems are: security, interface definition, and binary compatibility. WebAssembly Components are [sandboxed](https://en.wikipedia.org/wiki/Sandbox_(computer_security)), interoperable units of code and data with clearly-defined interfaces. In this post, I'll walk through exactly what they are and how they address those three problems with existing native plugin systems. Then, I'll show a concrete example of adding a plugin system to a Rust program that interfaces with plugins written in C and JavaScript.
+There are several common issues with _native_ plugin systems---ones that load machine code plugins that were likely written in a compiled language like C++ or Rust. Three big problems are: security, interface definition, and binary compatibility. WebAssembly Components are [sandboxed](<https://en.wikipedia.org/wiki/Sandbox_(computer_security)>), interoperable units of code and data with clearly-defined interfaces. In this post, I'll walk through exactly what they are and how they address those three problems with existing native plugin systems. Then, I'll show a concrete example of adding a plugin system to a Rust program that interfaces with plugins written in C and JavaScript.
 
 ## Table of Contents
 
@@ -28,10 +28,11 @@ Native plugin systems tend to be implemented with _shared libraries_. The plugin
 
 Here's a diagram showing the main system components involved in such a plugin architecture:
 
-<ThemedImage 
-    darkSrc={shared_libs_dark} 
-    lightSrc={shared_libs_light} 
-    alt="Image showing the architecture described below"/>
+<ThemedImage
+  darkSrc={shared_libs_dark}
+  lightSrc={shared_libs_light}
+  alt="Image showing the architecture described below"
+/>
 
 The host application loads each shared library using `dlopen`. This loads the plugin into the same address space as the host application, so it can communicate with regular function calls. As a consequence, the plugins have the same privileges as the host application.
 
@@ -39,11 +40,11 @@ Before we dive in to WebAssembly, let's look at how shared libraries exhibit our
 
 ### Security
 
-The plugin is untrusted code. We're loading this code into the host application and running it with the same privilege levels as the host. Even if the host or some other system components scan the plugin for malicious code, we're still opening the system up to all kinds of attacks, from the plugin installing a keylogger, to exfiltrating sensitive files, to taking over the whole computer. 
+The plugin is untrusted code. We're loading this code into the host application and running it with the same privilege levels as the host. Even if the host or some other system components scan the plugin for malicious code, we're still opening the system up to all kinds of attacks, from the plugin installing a keylogger, to exfiltrating sensitive files, to taking over the whole computer.
 
 ### Interface Definition
 
-Native plugin systems have a few options for how they define their interface, depending on how they are intended to be used. In order to support the widest range of plugin implementations, many systems provide C headers that define the functions that the plugin should expose and the functions that are available to call on the host. For example, we might require that plugins expose a `plugin_init` function that the host can call, and the host may provide a `host_register_data` function that the plugin can call. 
+Native plugin systems have a few options for how they define their interface, depending on how they are intended to be used. In order to support the widest range of plugin implementations, many systems provide C headers that define the functions that the plugin should expose and the functions that are available to call on the host. For example, we might require that plugins expose a `plugin_init` function that the host can call, and the host may provide a `host_register_data` function that the plugin can call.
 
 C is the most common option, because essentially every widely-used general-purpose programming language can call C functions. However, this restricts us to a lowest-common denominator approach to API design that cannot take advantage of the more rich feature sets of other languages. For example, if we're writing a Rust plugin, we might hope to interact with functions that return `Result` types to indicate potential errors, but we'll be forced instead to use out parameters and error codes to interact with the equivalent C definitions (unless someone implements a Rust interface on top of the C one).
 
@@ -61,7 +62,7 @@ Some of the key benefits of Wasm are:
 - Speed: While of course running in a virtual machine adds runtime overhead to Wasm applications, the Wasm binary format is designed to map onto efficient machine operations, enabling highly-performant virtual machine implementations backed by just-in-time (JIT) compilation.
 - Portability: Wasm code is not tied to a specific platform, therefore a unit of Wasm code can run in any environment that provides a Wasm runtime with sufficient capabilities.
 
-Although, as you may guess from the name, Wasm was originally designed for use on the web, Wasm is also applicable in non-web contexts that can make use of the above benefits. This is supported by non-browser Wasm execution environments such as [Wasmtime](https://wasmtime.dev/), which we'll use later in this article. 
+Although, as you may guess from the name, Wasm was originally designed for use on the web, Wasm is also applicable in non-web contexts that can make use of the above benefits. This is supported by non-browser Wasm execution environments such as [Wasmtime](https://wasmtime.dev/), which we'll use later in this article.
 
 ### Modules
 
@@ -84,6 +85,7 @@ Concretely, WIT defines the following types that can be used in component export
 - `result<T,E>`: Either a `T` or an `E` (like `std::expected` in C++ or `Result` in Rust)
 - `tuple<Ts...>`: A fixed-length sequence of values of the given types (like `std::tuple` in C++ or Rust's built in `tuple`)
 - `record`: A value that contains named fields with specified types (like structs in C++ and Rust), e.g.:
+
 ```wit
 record cat {
     name: string, // Name comes first, then colon, then type, fields delimited by comma
@@ -91,7 +93,9 @@ record cat {
     age: u32,
 }
 ```
+
 - `variant`: A value that contains exactly one of the listed cases, which may have associated data (like `std::variant` in C++ or `enum` in Rust), e.g.:
+
 ```wit
 variant cat-toy {
     ball,
@@ -99,7 +103,9 @@ variant cat-toy {
     teddy(string), // Variant cases can have associated data, like the teddy has a name
 }
 ```
+
 - `enum`: A value that contains exactly one of the listed cases, which cannot have associated data (like `enum` in C++), e.g.:
+
 ```wit
 enum cat-type {
     ragdoll,
@@ -107,7 +113,9 @@ enum cat-type {
     persian,
 }
 ```
+
 - `flags`: A set of named booleans (like an `enum` that's used as bitflags in C++), e.g.:
+
 ```wit
 flags cat-flags {
     is-fluffy,
@@ -115,16 +123,21 @@ flags cat-flags {
     wears-a-collar,
 }
 ```
+
 - Type alias: like `using T = OtherType;` in C++ or `type T = OtherType;` in Rust, e.g.:
+
 ```wit
 type cat-registry = list<cat>;
-``` 
+```
+
 - `func`: A function with specified parameters and return type, e.g.:
+
 ```wit
 eat-food: func(hungry-friend: cat, amount-of-food: u32)-> mess;
 // Like the C++ function mess eat_food(cat hungry_friend, uint32_t amount_of_food);
 // Or the Rust function fn eat_food(hungry_friend: cat, amount_of_food: u32) -> mess;
 ```
+
 - `resource`: An opaque handle to an object that satisfies a specified interface[^2]
 
 As you can see, WIT gives us a whole lot more to play with when we're defining our interfaces. With those available, let's look at how we can use WIT to specify components.
@@ -171,17 +184,18 @@ Interfaces, worlds, and packages give us a high-level, machine-readable definiti
 Note that, with this, we have solutions to all three of our main problems:
 
 - **Security**: Components run in a sandboxed environment with controlled interfaces
-- **Interface Definition**: WIT provides rich types that go beyond C's limitations and map directly on to higher-level programming concepts  
+- **Interface Definition**: WIT provides rich types that go beyond C's limitations and map directly on to higher-level programming concepts
 - **Binary Compatibility**: The binary format is stable so any language can communicate with any other through these interfaces
 
 Here's a diagram showing what the architecture of our Wasm-based plugin system looks like:
 
-<ThemedImage 
-    lightSrc={components_light} 
-    darkSrc={components_dark} 
-    alt="Image showing the architecture described below"/>
+<ThemedImage
+  lightSrc={components_light}
+  darkSrc={components_dark}
+  alt="Image showing the architecture described below"
+/>
 
-The host application embeds the Wasm runtime. Rather than loading the plugins into the host application, the are loaded into the Wasm runtime, which sandboxes their execution. The host application communicates with the plugins through a carefully-controlled interface supplied by the Wasm runtime. 
+The host application embeds the Wasm runtime. Rather than loading the plugins into the host application, the are loaded into the Wasm runtime, which sandboxes their execution. The host application communicates with the plugins through a carefully-controlled interface supplied by the Wasm runtime.
 
 The last piece of the puzzle is tooling. Based on the WIT description, we can use tools such as [`wit-bindgen`](https://github.com/bytecodealliance/wit-bindgen) to automatically generate bindings for whatever programming language we're using that handles the binary format for us, letting us call functions that are exported by other components without having to think about the communication layer.
 
@@ -334,7 +348,6 @@ impl GameState {
 
 We set `next_plugin_id` to `1` so that the first plugin will get that identifier. The built in types of guys are the ones I had already implemented, and the other two members are empty for now.
 
-
 #### Loading and running plugins
 
 We'll define a function called `load_plugins`, which we'll call during the game initialisation like this:
@@ -354,8 +367,8 @@ pub fn load_plugins(state: &mut GameState, plugins_dir: &Path) -> wasmtime::Resu
     // ...
 }
 ```
-[`Engine::default()`](https://docs.rs/wasmtime/latest/wasmtime/struct.Engine.html) gets us a Wasmtime engine with some reasonable settings. There's a whole load of configuration options you can pass, which you can find in the docs for [`wasmtime::Config`](https://docs.rs/wasmtime/latest/wasmtime/struct.Config.html). The [`Linker`](https://docs.rs/wasmtime/latest/wasmtime/component/struct.Linker.html) is the part of Wasmtime that is responsible for linking components together by resolving function names to their implementations. We'll need to tell the linker about any Wasm functions that we want to call. `bindgen` helps us by generating an `add_to_linker` function for any WIT worlds that have imports that we can implement. We can call it like this:
 
+[`Engine::default()`](https://docs.rs/wasmtime/latest/wasmtime/struct.Engine.html) gets us a Wasmtime engine with some reasonable settings. There's a whole load of configuration options you can pass, which you can find in the docs for [`wasmtime::Config`](https://docs.rs/wasmtime/latest/wasmtime/struct.Config.html). The [`Linker`](https://docs.rs/wasmtime/latest/wasmtime/component/struct.Linker.html) is the part of Wasmtime that is responsible for linking components together by resolving function names to their implementations. We'll need to tell the linker about any Wasm functions that we want to call. `bindgen` helps us by generating an `add_to_linker` function for any WIT worlds that have imports that we can implement. We can call it like this:
 
 ```rust
     Plugin::add_to_linker(&mut linker, |state| state)?;
@@ -384,7 +397,7 @@ pub fn load_plugins(state: &mut GameState, plugins_dir: &Path) -> wasmtime::Resu
 
 We return an error if the plugins directory doesn't exist. Otherwise, we loop through the entries in the directory and call `load_plugin` for each `.wasm` file.
 
-The `load_plugin` function is responsible for loading the plugin from disk, instantiating a `GPlugin` component from it, calling the plugin's `init` function and storing aside it's name and path: 
+The `load_plugin` function is responsible for loading the plugin from disk, instantiating a `GPlugin` component from it, calling the plugin's `init` function and storing aside it's name and path:
 
 ```rust
 fn load_plugin(
@@ -487,6 +500,7 @@ This will generate three files: a header with declarations for the bindings, a s
 The relevant functions and types that the bindings declare for us are:
 
 - `plugin_string_t` and `plugin_list_string_t`: C types corresponding to `string` and `list<string>`, with the following definitions:
+
 ```c
 typedef struct plugin_string_t {
   uint8_t*ptr;
@@ -500,6 +514,7 @@ typedef struct {
 ```
 
 - `tl_guy_fighter_host_type_of_guy_t`: The C version of `type-of-guy`, which looks like this:
+
 ```c
 typedef struct tl_guy_fighter_host_type_of_guy_t {
   plugin_string_t   name;
@@ -544,7 +559,7 @@ void exports_plugin_init() {
     plugin_string_dup(&battle_cries.ptr[0], "Woof!");
     plugin_string_dup(&battle_cries.ptr[1], "Bark bark!");
     new_guy.battle_cries = battle_cries;
-    
+
     tl_guy_fighter_host_invent_entirely_new_type_of_guy(&new_guy);
     tl_guy_fighter_host_type_of_guy_free(&new_guy);
 }
@@ -593,23 +608,23 @@ There's no separate step required to generate bindings; we can simply write a Ja
 The implementations of the exports are a fair bit simpler in JavaScript since we don't need to manage the memory ourselves, and all the typing is dynamic:
 
 ```js
-import { inventEntirelyNewTypeOfGuy } from 'tl:guy-fighter/host';
+import { inventEntirelyNewTypeOfGuy } from "tl:guy-fighter/host";
 
 export function init() {
-    inventEntirelyNewTypeOfGuy({
-        name: "Guy who's made entirely of JavaScript",
-        strength: 13,
-        agility: 20,
-        charisma: 11,
-        battleCries: [
-            "console.log('Time for DEATH!')",
-            "let i_will_destroy_you = true;",
-        ]
-    });
+  inventEntirelyNewTypeOfGuy({
+    name: "Guy who's made entirely of JavaScript",
+    strength: 13,
+    agility: 20,
+    charisma: 11,
+    battleCries: [
+      "console.log('Time for DEATH!')",
+      "let i_will_destroy_you = true;",
+    ],
+  });
 }
 
 export function getPluginName() {
-    return 'Coffee Guy Plugin';
+  return "Coffee Guy Plugin";
 }
 ```
 
@@ -634,9 +649,8 @@ With this run, you can copy the resulting component into Guy Fighter's plugin di
 
 We successfully built a plugin system for a game that is secure and has well-defined interfaces at the source and binary level. You can find the full code for Guy Fighter [on GitHub](https://github.com/TartanLlama/guy-fighter). Stay tuned for more posts about the Wasm component model.
 
-
----------------
+---
 
 [^1]: Specifically, `char` is a [Unicode Scalar Value](https://unicode.org/glossary/#unicode_scalar_value).
-[^2]: Resources have a fair amount to them and they're not super relevant for this use case, so have a look at [the documentation](https://component-model.bytecodealliance.org/design/wit.html#resources) if you want to learn more.
 
+[^2]: Resources have a fair amount to them and they're not super relevant for this use case, so have a look at [the documentation](https://component-model.bytecodealliance.org/design/wit.html#resources) if you want to learn more.

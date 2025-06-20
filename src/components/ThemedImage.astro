@@ -1,10 +1,11 @@
 ---
 import { Image } from "astro:assets";
 import type { ImageMetadata } from "astro";
+import type { LocalImageProps } from "astro:assets";
 
 export interface Props {
-  lightSrc: ImageMetadata | string;
-  darkSrc: ImageMetadata | string;
+  lightSrc: ImageMetadata;
+  darkSrc: ImageMetadata;
   alt: string;
   class?: string;
   width?: number;
@@ -20,24 +21,19 @@ const {
   height,
 } = Astro.props;
 
-const buildImageProps = (additionalClass: string) => {
-  const props: any = {
+const buildImageProps = (src: ImageMetadata, additionalClass: string) => {
+  const props: LocalImageProps = {
     alt,
+    src,
     class: `${additionalClass} border-0 ${className}`,
   };
-  
+
   if (width !== undefined) props.width = width;
   if (height !== undefined) props.height = height;
-  
+
   return props;
 };
 ---
 
-<Image
-  src={lightSrc}
-  {...buildImageProps("block dark:hidden")}
-/>
-<Image
-  src={darkSrc}
-  {...buildImageProps("hidden dark:block")}
-/>
+<Image {...buildImageProps(lightSrc, "block dark:hidden")} />
+<Image {...buildImageProps(darkSrc, "hidden dark:block")} />
