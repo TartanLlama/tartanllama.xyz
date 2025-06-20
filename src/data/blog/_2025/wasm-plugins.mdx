@@ -16,6 +16,12 @@ import shared_libs_light from "@assets/images/wasm-plugins/shared-libs.light.svg
 import components_dark from "@assets/images/wasm-plugins/components.dark.svg";
 import components_light from "@assets/images/wasm-plugins/components.light.svg";
 
+In this blog post, we'll look at how WebAssembly components can help you build secure, fast plugin systems with well-defined interfaces. We'll build a plugin system for a game called Guy Fighter, which will let users install plugins that invent entirely new types of guy for you to pit against each other.
+
+![A console based game, showing a fighter roster of various types of guys, some of whom are made of nails](@/assets/images/wasm-plugins/intro-graphic.png)
+
+---
+
 When shipping software, we often want to enable user-driven customisation and extension. For example, we could support custom instruments for our audio application, or user-created content for our video game. To support non-programmer users and closed-source development, we should allow these customisations to be loaded at runtime rather than requiring that they be compiled into the application. This is often achieved through _plugins_, which are code and data packages that users place in some designated plugin directory in their filesystem. The application that they're using, known as the _host_, loads these plugins and interacts with them in an application-defined manner to run the code in the plugin and transfer any necessary data.
 
 There are several common issues with _native_ plugin systems&mdash;ones that load machine code plugins that were likely written in a compiled language like C++ or Rust. Three big problems are: security, interface definition, and binary compatibility. WebAssembly Components are [sandboxed](<https://en.wikipedia.org/wiki/Sandbox_(computer_security)>), interoperable units of code and data with clearly-defined interfaces. In this post, I'll walk through exactly what they are and how they address those three problems with existing native plugin systems. Then, I'll show a concrete example of adding a plugin system to a Rust program that interfaces with plugins written in C and JavaScript.
