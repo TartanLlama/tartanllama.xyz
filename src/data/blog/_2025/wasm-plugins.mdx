@@ -651,15 +651,25 @@ With this run, you can copy the resulting component into Guy Fighter's plugin di
 
 ![Updated version of Guy Fighter that shows the data from the JS component as well as the C one](@/assets/images/wasm-plugins/guy-fighter-3.png)
 
+#### The Magic
+
+I promised we'd talk about what enables generating Wasm components from JavaScript. JavaScript is a dynamically-typed language, which complicates compiling it ahead-of-time to a language without dynamic types, such as x64 machine code, or WebAssembly. Typically, JavaScript is executed with a multi-level interpreter, where the top level is a "pure" interpreter, the bottom level is an optimising JIT compiler, and the levels in between are backed by JITs that compile faster but optimise less.
+
+What ComponentizeJS does is say, well, if we're not going to compile the JavaScript to WebAssembly, how about we compile the JavaScript engine to WebAssembly, dump it into the component, and use that to run the JavaScript? You can read more of the details in the [Making JavaScript Run Fast on WebAssembly](https://bytecodealliance.org/articles/making-javascript-run-fast-on-webassembly) explainer, but that's the jist of it: it takes the [SpiderMonkey](https://spidermonkey.dev/) JS engine (which is used in Firefox), customises it for WebAssembly to make the [StarlingMonkey](https://github.com/bytecodealliance/StarlingMonkey) engine, then embeds that in your component.
+
+Unfortunately, there's another problem. JIT compilation to native code is what makes JavaScript fast, but WebAssembly environments often disable runtime generation of code for security reasons. To address this, StarlingMonkey can use a mind-bending form of ahead-of-time compilation: the interpreter (which is compiled to Wasm) is partially-evaluated on the JavaScript code to produce a Wasm program that corresponds to the original JavaScript. This is a big simplification of what's going on; you can read [Chris Fallin's blog post on `weval`](https://cfallin.org/blog/2024/08/28/weval/) for more details.
+
+But why would we do this in the first place? Since WebAssembly engines are virtual machines, we can save the state of them at a given point ([snapshotting](https://en.wikipedia.org/wiki/Snapshot_(computer_storage))) and restore it later. JavaScript engines typically take a long time to spin up while they parse the JS, generate bytecode for it, initialise the interpreter, etc. With WebAssembly, we can run the engine initialisation once for a given JS program, snapshot the state, then load the snapshotted version when we want to run the code. This dramatically improves the startup times and gives us all the sandboxing benefits of WebAssembly.
+
 ## Limitations
 
 Of course, nothing comes for free.
 
-The execution of WebAssembly components is backed by JIT compilation, which gives runtime performance [approaching that of native code](https://00f.net/2023/01/04/webassembly-benchmark-2023/).
+The WebAssembly is compiled to native code, so has runtime performance [approaching that of traditional native compilation](https://00f.net/2023/01/04/webassembly-benchmark-2023/).
 
-However, since the sandbox around components disallows the sharing of memory, applications with latency constraints that would prefer to pass shared buffers of data around for plugins to operate on would need to consider alternative options. They could for example use [resources](https://github.com/WebAssembly/component-model/blob/main/design/mvp/WIT.md#item-resource) and function-based manipulations of those buffers, but that comes with additional overhead.
+However, since the sandbox around components disallows the sharing of memory, applications with latency constraints that would prefer to pass shared buffers of data around for plugins to operate on would need to consider alternative options. They could for example use [resources](https://github.com/WebAssembly/component-model/blob/main/design/mvp/WIT.md#item-resource) and function-based manipulations of those buffers, but that comes with additional overhead. As such, if your host has to share a lot of data with plugins without copying, the Wasm component model in its current state may not be the best fit for your application. 
 
-As such, if your host has to share a lot of data with plugins without copying, the Wasm component model in its current state may not be the best fit for your application. There is ongoing work in this area, however [...to get feedback from people who know what they're talking about].
+There is ongoing work in this area, however. The Preview 3 release of the component model comes with [asynchronous streams](https://github.com/WebAssembly/component-model/blob/main/design/mvp/Async.md#streams-and-futures). These can avoid copies between the host and guest components by providing the host with a buffer within the component's memory space that it can write into directly, or pass to asynchronous I/O operations provided by the operating system, like [`io_uring`](https://man7.org/linux/man-pages/man7/io_uring.7.html). For avoiding copies between components themselves, there's work on [shared heaps](https://bytecodealliance.org/articles/wamr-2024-summary#shared-heap-efficient-memory-sharing) which could be leveraged for views of a single buffer with exclusive ownership of this view being passed between components.
 
 ## Conclusion
 
