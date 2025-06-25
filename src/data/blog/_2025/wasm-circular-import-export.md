@@ -9,7 +9,7 @@ canonicalURL: https://tartanllama.xyz/posts/wasm-circular-import-export
 description: Why circular references between imports and exports don't work, but seem valid
 ---
 
-[WebAssembly components](https://component-model.bytecodealliance.org/) allow us to define bundles of code and data with well-defined interfaces at the source and binary level. Circular dependencies between these components may look reasonable and successfully generate bindings, but have different semantics than you expect. In this post we'll walk through why.
+[WebAssembly components](https://component-model.bytecodealliance.org/) are bundles of code and data that run in a sandboxed environment with well-defined interfaces at the source and binary level. There's a subtle gotcha that you may encounter when defining them: when your component both imports and exports the same interface, you can end up with duplicated types that can't be used interchangeably. In this post we'll walk through the details of this potentially unexpected behaviour, why it occurs, and a few alternative designs that you can consider.
 
 For a short introduction to WebAssembly and the component model, see my post on [writing plugin systems with WebAssembly](/posts/wasm-plugins#webassembly).
 
@@ -41,7 +41,7 @@ world user {
 }
 ```
 
-We have an interface called `cat:registry/host-api` that defines a [resource](https://component-model.bytecodealliance.org/design/wit.html#resources) called `cat`, which declares a function to get its name. We then have an interface called `cat:registry/user-api` that relies on the `cat` definition from `host-api`. It declares a function to notify it that a `cat` has been registered, which takes a borrowed handle to a `cat`: a temporary loan of the resource. Our `registry` world _imports_ (has a dependency on) the user API so it can call `notify-cat-registered`, and _exports_ (implements) `host-api`. Finally, we have a `user` world, which implements `user-api`.
+We have an interface called `cat:registry/host-api` that defines a [resource](https://component-model.bytecodealliance.org/design/wit.html#resources) called `cat`. This is an opaque type&mdash;we don't know how it's implemented, only that it exposes a function to get its name. We then have an interface called `cat:registry/user-api` that relies on the `cat` definition from `host-api`. It declares a function to notify it that a `cat` has been registered, which takes a borrowed handle to a `cat`: a temporary loan of the resource. Our `registry` world _imports_ (has a dependency on) the user API so it can call `notify-cat-registered`, and _exports_ (implements) `host-api`. Finally, we have a `user` world, which implements `user-api`.
 
 If you run [`wit-bindgen`](https://github.com/bytecodealliance/wit-bindgen) to generate bindings for the `registry` world, you'll get code that contains roughly these definitions:
 
