@@ -32,6 +32,7 @@ const {
   timezone,
   tags,
   hideEditPost,
+  draft,
 } = post.data;
 
 const { Content } = await render(post);
@@ -103,6 +104,17 @@ const nextPost =
       <EditPost class="max-sm:hidden" {hideEditPost} {post} />
     </div>
     <article id="article" class="mx-auto prose mt-8 max-w-app">
+      {
+        draft && (
+          <div class="border-l-4 border-orange-500 p-2" role="alert">
+            <p>
+              <strong>Public Preview:</strong>{" "}
+              <em>This post is still a draft and not published yet.</em>
+            </p>
+          </div>
+        )
+      }
+
       <Content />
     </article>
 
