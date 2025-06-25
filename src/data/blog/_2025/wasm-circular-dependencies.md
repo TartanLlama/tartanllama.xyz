@@ -5,7 +5,7 @@ title: "WebAssembly Components: Circular Dependencies and World Elaboration"
 draft: true
 tags:
   - WebAssembly
-canonicalURL: https://tartanllama.xyz/posts/wasm-circular-import-export
+canonicalURL: https://tartanllama.xyz/posts/wasm-circular-dependencies
 description: Why circular dependencies between imports and exports don't work, but seem valid
 ---
 
