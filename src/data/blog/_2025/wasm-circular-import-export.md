@@ -1,15 +1,15 @@
 ---
 author: Sy Brand
 pubDatetime: 2025-06-25
-title: "WebAssembly Components: Circular References and World Elaboration"
+title: "WebAssembly Components: Circular Dependencies and World Elaboration"
 draft: true
 tags:
   - WebAssembly
 canonicalURL: https://tartanllama.xyz/posts/wasm-circular-import-export
-description: Why circular references between imports and exports don't work, but seem valid
+description: Why circular dependencies between imports and exports don't work, but seem valid
 ---
 
-[WebAssembly components](https://component-model.bytecodealliance.org/) are bundles of code and data that run in a sandboxed environment with well-defined interfaces at the source and binary level. There's a subtle gotcha that you may encounter when defining them: when your component both imports and exports the same interface, you can end up with duplicated types that can't be used interchangeably. In this post we'll walk through the details of this potentially unexpected behaviour, why it occurs, and a few alternative designs that you can consider.
+[WebAssembly components](https://component-model.bytecodealliance.org/) are bundles of code and data that run in a sandboxed environment with well-defined interfaces at the source and binary level. There's a subtle gotcha that you may encounter when defining them: when you have circular dependencies between components, you can end up with duplicated types that can't be used interchangeably. In this post we'll walk through the details of this potentially unexpected behaviour, why it occurs, and a few alternative designs that you can consider.
 
 For a short introduction to WebAssembly and the component model, see my post on [writing plugin systems with WebAssembly](/posts/wasm-plugins#webassembly).
 
