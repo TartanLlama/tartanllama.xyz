@@ -43,7 +43,7 @@ world user {
 
 We have an interface called `cat:registry/host-api` that defines a [resource](https://component-model.bytecodealliance.org/design/wit.html#resources) called `cat`. This is an opaque type&mdash;we don't know how it's implemented, only that it exposes a function to get its name. We then have an interface called `cat:registry/user-api` that relies on the `cat` definition from `host-api`. It declares a function to notify it that a `cat` has been registered, which takes a borrowed handle to a `cat`: a temporary loan of the resource. Our `registry` world _imports_ (has a dependency on) the user API so it can call `notify-cat-registered`, and _exports_ (implements) `host-api`. Finally, we have a `user` world, which implements `user-api`.
 
-If you run [`wit-bindgen`](https://github.com/bytecodealliance/wit-bindgen) to generate bindings for the `registry` world, you'll get code that contains roughly these definitions:
+If you run [`wit-bindgen`](https://github.com/bytecodealliance/wit-bindgen) to generate Rust bindings for the `registry` world, you'll get code that contains roughly these definitions:
 
 ```rust
 pub mod cat {
