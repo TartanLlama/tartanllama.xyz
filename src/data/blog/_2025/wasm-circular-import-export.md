@@ -9,9 +9,9 @@ canonicalURL: https://tartanllama.xyz/posts/wasm-circular-import-export
 description: Why circular references between imports and exports don't work, but seem valid
 ---
 
-[WebAssembly components](https://component-model.bytecodealliance.org/) allow us to define bundles of code and data with well-defined interfaces at the source and binary level. Circular dependencies between these components may look reasonable and successfully generate bindings, but have different semantics than you expect. In this post we'll walk through why. 
+[WebAssembly components](https://component-model.bytecodealliance.org/) allow us to define bundles of code and data with well-defined interfaces at the source and binary level. Circular dependencies between these components may look reasonable and successfully generate bindings, but have different semantics than you expect. In this post we'll walk through why.
 
-For a short introduction to WebAssembly and the component model, see my post on [writing plugin systems with WebAssembly](/posts/wasm-plugins#webassembly). 
+For a short introduction to WebAssembly and the component model, see my post on [writing plugin systems with WebAssembly](/posts/wasm-plugins#webassembly).
 
 ## A Motivating Example
 
@@ -41,7 +41,7 @@ world user {
 }
 ```
 
-We have an interface called `cat:registry/host-api` that defines a [resource](https://component-model.bytecodealliance.org/design/wit.html#resources) called `cat`, which declares a function to get its name. We then have an interface called `cat:registry/user-api` that relies on the `cat` definition from `host-api`. It declares a function to notify it that a `cat` has been registered, which takes a borrowed handle to a `cat`: a temporary loan of the resource. Our `registry` world *imports* (has a dependency on) the user API so it can call `notify-cat-registered`, and *exports* (implements) `host-api`. Finally, we have a `user` world, which implements `user-api`.
+We have an interface called `cat:registry/host-api` that defines a [resource](https://component-model.bytecodealliance.org/design/wit.html#resources) called `cat`, which declares a function to get its name. We then have an interface called `cat:registry/user-api` that relies on the `cat` definition from `host-api`. It declares a function to notify it that a `cat` has been registered, which takes a borrowed handle to a `cat`: a temporary loan of the resource. Our `registry` world _imports_ (has a dependency on) the user API so it can call `notify-cat-registered`, and _exports_ (implements) `host-api`. Finally, we have a `user` world, which implements `user-api`.
 
 If you run [`wit-bindgen`](https://github.com/bytecodealliance/wit-bindgen) to generate bindings for the `registry` world, you'll get code that contains roughly these definitions:
 
@@ -72,11 +72,11 @@ pub mod exports {
 }
 ```
 
-Even if you don't read much Rust, hopefully you can see that this defines two *separate* types called `Cat`: one in the `cat::registry::host_api` module and one in the `exports::cat::registry` module. The `notify_cat_registered` function uses the one in the `cat::registry::host_api` module. Since the two `Cat` types are separate, we can't pass a handle for one `Cat` type to a function that expects the other type. Why is there not just one type?
+Even if you don't read much Rust, hopefully you can see that this defines two _separate_ types called `Cat`: one in the `cat::registry::host_api` module and one in the `exports::cat::registry` module. The `notify_cat_registered` function uses the one in the `cat::registry::host_api` module. Since the two `Cat` types are separate, we can't pass a handle for one `Cat` type to a function that expects the other type. Why is there not just one type?
 
 ## World Elaboration
 
-The problem becomes clearer if we ask [`wasm-tools`](https://github.com/bytecodealliance/wasm-tools) to dump out the *elaborated world* for `registry`. This is the world produced by ensuring that a world's implicit dependencies are explicity imported. Let's consider a simpler example:
+The problem becomes clearer if we ask [`wasm-tools`](https://github.com/bytecodealliance/wasm-tools) to dump out the _elaborated world_ for `registry`. This is the world produced by ensuring that a world's implicit dependencies are explicity imported. Let's consider a simpler example:
 
 ```wit
 package example:elaboration;
@@ -124,7 +124,7 @@ world elaboration {
 
 The difference is that the `elaboration` world now has an `import` for `defines-resource`. This is added because the interface that `elaboration` exports depends on a resource defined in `defines-resource`, and thus that interface must be imported by `elaboration`.
 
-This elaboration is *transitive*, so imports will also be added to a world for any dependencies that those dependencies have, any of their dependencies, and so on. For example:
+This elaboration is _transitive_, so imports will also be added to a world for any dependencies that those dependencies have, any of their dependencies, and so on. For example:
 
 ```wit
 package example:elaboration;
@@ -150,7 +150,7 @@ world elaboration {
 }
 ```
 
-In this example, I've added a `dependency` interface with a `dependency-resource` resource. This is then used by our original `defines-resource` interface. The elaborated world for `elaboration` then imports *both* of these interfaces:
+In this example, I've added a `dependency` interface with a `dependency-resource` resource. This is then used by our original `defines-resource` interface. The elaborated world for `elaboration` then imports _both_ of these interfaces:
 
 ```wit
 world elaboration {
@@ -186,9 +186,9 @@ world registry {
 }
 ```
 
-Now we can see why there were two versions of `Cat`: the `host-api` interface is both exported *and* imported.
+Now we can see why there were two versions of `Cat`: the `host-api` interface is both exported _and_ imported.
 
-The reason this happens is a bit subtle. Before its exports are made available, a component must be *instantiated*. The first step of this process is to resolve the imports of the component. This means that imports must be supplied *before* the component's exports are made available; a component's import can't reference one of its exports, because the export wouldn't exist yet.
+The reason this happens is a bit subtle. Before its exports are made available, a component must be _instantiated_. The first step of this process is to resolve the imports of the component. This means that imports must be supplied _before_ the component's exports are made available; a component's import can't reference one of its exports, because the export wouldn't exist yet.
 
 This leaves us with two questions: why is this elaborated world valid, and what can we do instead?
 
@@ -299,6 +299,3 @@ Understanding world elaboration and component instantiation helps clarify why ce
 ## Acknowledgements
 
 Thanks to Alex Crichton for patiently explaining this all to me as I've been fumbling around with WIT.
-
-
-
