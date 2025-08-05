@@ -1,8 +1,7 @@
 ---
 author: Sy Brand
-pubDatetime: 2025-06-16
+pubDatetime: 2025-08-05
 title: "Building Native Plugin Systems with WebAssembly Components"
-draft: true
 tags:
   - Rust
   - WebAssembly
@@ -16,7 +15,7 @@ import shared_libs_light from "@assets/images/wasm-plugins/shared-libs.light.svg
 import components_dark from "@assets/images/wasm-plugins/components.dark.svg";
 import components_light from "@assets/images/wasm-plugins/components.light.svg";
 
-In this blog post, we'll look at how WebAssembly components can help you build secure, fast plugin systems with well-defined interfaces. We'll build a plugin system for a game called Guy Fighter, which will let users install plugins that invent entirely new types of guy for you to pit against each other.
+WebAssembly components can help you build secure, fast plugin systems with well-defined interfaces. I'll show you how, then we'll build a plugin system for a game called Guy Fighter, which will let users install plugins that invent entirely new types of guy for them to pit against each other.
 
 ![A console based game, showing a fighter roster of various types of guys, some of whom are made of nails](@/assets/images/wasm-plugins/intro-graphic.png)
 
@@ -24,9 +23,9 @@ In this blog post, we'll look at how WebAssembly components can help you build s
 
 ## Introduction
 
-When shipping software, we often want to enable user-driven customisation and extension. For example, we could support custom instruments for our audio application, or user-created content for our video game. To support non-programmer users and closed-source development, we should allow these customisations to be loaded at runtime rather than requiring that they be compiled into the application. This is often achieved through _plugins_, which are code and data packages that users place in some designated plugin directory in their filesystem. The application that they're using, known as the _host_, loads these plugins and interacts with them in an application-defined manner to run the code in the plugin and transfer any necessary data.
+When shipping software, we often want to enable user-driven customisation and extension. For example, we could support custom instruments for our audio application, or user-created content for our video game. To support non-programmer users and closed-source development, we should enable users to load these customisations at runtime rather than requiring that users compile them into the application. This is often achieved through _plugins_, which are code and data packages that users place in some designated plugin directory in their filesystem. The application that they're using, known as the _host_, loads these plugins and interacts with them in an application-defined manner to run the code in the plugin and transfer any necessary data.
 
-There are several common issues with _native_ plugin systems&mdash;ones that load machine code plugins that were likely written in a compiled language like C++ or Rust. Three big problems are: security, interface definition, and binary compatibility. WebAssembly Components are [sandboxed](<https://en.wikipedia.org/wiki/Sandbox_(computer_security)>), interoperable units of code and data with clearly-defined interfaces. In this post, I'll walk through exactly what they are and how they address those three problems with existing native plugin systems. Then, I'll show a concrete example of adding a plugin system to a Rust program that interfaces with plugins written in C and JavaScript.
+There are several common issues with _native_ plugin systems&mdash;&mdash;ones that load machine code plugins that were likely written in a compiled language like C++ or Rust. Three big problems are: security, interface definition, and binary compatibility. WebAssembly Components are [sandboxed](<https://en.wikipedia.org/wiki/Sandbox_(computer_security)>), interoperable units of code and data with clearly-defined interfaces. In this post, I'll walk through exactly what they are and how they address those three problems with existing native plugin systems. Then, I'll show a concrete example of adding a plugin system to a Rust program that interfaces with plugins written in C and JavaScript.
 
 ## Usual Design for Native Plugins
 
@@ -56,7 +55,7 @@ C is the most common option, because essentially every widely-used general-purpo
 
 ### Binary Compatibility
 
-If we decide that we want to define an interface that uses more high-level abstractions, then we're going to run into binary compatibility issues. Say, for example, we want to make a clean C++ interface and the `host_register_data` function should take a [`std::unordered_map`](https://en.cppreference.com/w/cpp/container/unordered_map.html) that defines the data to register. The compiled host application and the compiled plugin need to agree on the binary layout of `std::unordered_map` in order for this to work. C++ does not define the binary layout of standard library types, nor does it make an guarantee that they won't change between standard library implementations, or even different versions of the same standard library, or even the same version of the same standard library with different compiler flags. As such, the plugin would likely need to use the same compiler and standard library configuration as the host so that the two can communicate a `std::unordered_map` between their functions. This is a tough restriction, and getting it wrong could result in absolutely zero errors at compile or link time, silently corrupting data when the plugin is loaded.
+If we decide that we want to define an interface that uses more high-level abstractions, then we're going to run into binary compatibility issues. Say, for example, we want to make a clean C++ interface and the `host_register_data` function should take a [`std::unordered_map`](https://en.cppreference.com/w/cpp/container/unordered_map.html) that defines the data to register. The compiled host application and the compiled plugin need to agree on the binary layout of `std::unordered_map` in order for this to work. C++ does not define the binary layout of standard library types, nor does it make a guarantee that they won't change between standard library implementations, or different versions of the same standard library, or even the same version of the same standard library with different compiler flags. As such, the plugin would likely need to use the same compiler and standard library configuration as the host so that the two can communicate a `std::unordered_map` between their functions. This is a tough restriction, and getting it wrong could result in absolutely zero errors at compile or link time, silently corrupting data when the plugin is loaded.
 
 ## WebAssembly
 
@@ -64,9 +63,9 @@ If we decide that we want to define an interface that uses more high-level abstr
 
 Some of the key benefits of Wasm are:
 
-- Sandboxed execution: Wasm code cannot interact with the system outside of the Wasm virtual machine except through carefully-controlled interfaces, making it a safe environment for untrusted code.
-- Speed: While of course running in a virtual machine adds runtime overhead to Wasm applications, the Wasm binary format is designed to map onto efficient machine operations, enabling highly-performant virtual machine implementations backed by just-in-time (JIT) compilation.
-- Portability: Wasm code is not tied to a specific platform, therefore a unit of Wasm code can run in any environment that provides a Wasm runtime with sufficient capabilities.
+- **Sandboxed execution**: Wasm code cannot interact with the system outside of the Wasm virtual machine except through carefully-controlled interfaces, making it a safe environment for untrusted code.
+- **Speed**: While of course running in a virtual machine adds runtime overhead to Wasm applications, the Wasm binary format is designed to map onto efficient machine operations, enabling highly-performant virtual machine implementations backed by just-in-time (JIT) compilation.
+- **Portability**: Wasm code is not tied to a specific platform, therefore a unit of Wasm code can run in any environment that provides a Wasm runtime with sufficient capabilities.
 
 Although, as you may guess from the name, Wasm was originally designed for use on the web, Wasm is also applicable in non-web contexts that can make use of the above benefits. This is supported by non-browser Wasm execution environments such as [Wasmtime](https://wasmtime.dev/), which we'll use later in this article.
 
@@ -201,9 +200,9 @@ Here's a diagram showing what the architecture of our Wasm-based plugin system l
   alt="Image showing the architecture described below"
 />
 
-The host application embeds the Wasm runtime. Rather than loading the plugins into the host application, the are loaded into the Wasm runtime, which sandboxes their execution. The host application communicates with the plugins through a carefully-controlled interface supplied by the Wasm runtime.
+The host application embeds the Wasm runtime. Rather than loading the plugins into the host application, we load them into the Wasm runtime, which sandboxes their execution. The host application communicates with the plugins through a carefully-controlled interface supplied by the Wasm runtime.
 
-The last piece of the puzzle is tooling. Based on the WIT description, we can use tools such as [`wit-bindgen`](https://github.com/bytecodealliance/wit-bindgen) to automatically generate bindings for whatever programming language we're using that handles the binary format for us, letting us call functions that are exported by other components without having to think about the communication layer.
+The last piece of the puzzle is tooling. Based on the WIT description, we can use tools such as [`wit-bindgen`](https://github.com/bytecodealliance/wit-bindgen) to automatically generate bindings for whatever programming language we're using that handles the binary format for us, letting us call functions that other components export without having to think about the communication layer.
 
 Now that we have all the theory out of the way, we can look at what tools are available in practice and how we could build a system like the one described.
 
@@ -213,11 +212,11 @@ For the rest of this post, we'll focus on taking an existing toy application tha
 
 ### Guy Fighter
 
-The application I've written is called [Guy Fighter](https://github.com/TartanLlama/guy-fighter/tree/no-plugins). It's a battle simulation game which pits randomly-generated guys of different types against each other in mortal combat. Here's how it looks in action:
+The application I've written is called [Guy Fighter](https://github.com/TartanLlama/guy-fighter/tree/no-plugins). It's a battle simulation game that pits randomly-generated guys of different types against each other in mortal combat. Here's how it looks in action:
 
 ![A console based game, showing a fighter roster of two types of guys: a guy who's made of nails, and a guy who's made of normal guy stuff, except his hands, which are made of nails](@/assets/images/wasm-plugins/guy-fighter-1.png)
 
-As you can see, there's only two types of guy built in to the game. This very quickly becomes stale, but excitement is all that Guy Fighter is about. To add more variety to the game, we should allow the player to install plugins that register entirely new types of guys, who can then fight each other.
+As you can see, there's only two types of guy built in to the game. This very quickly becomes stale. To add more variety to the game, we should allow the player to install plugins that register entirely new types of guys, who can then fight each other.
 
 ### The WIT Definition
 
@@ -320,7 +319,7 @@ pub struct PluginDesc {
 }
 ```
 
-We'll give integer identifiers to our plugins so we can track which is which, so we define a `PluginId` type alias. Our game state holds the types of guy that are built in to the game and the ones that are invented by plugins, a map from plugin IDs to plugin descriptions, and the next plugin ID that is going to be allocated (this will increase by one each time a new plugin is registered). We wrap `invented_types_of_guy` in a [`RefCell`](https://doc.rust-lang.org/std/cell/struct.RefCell.html), which moves borrow checking of the `Vec` from compile time to run time. We do this so that plugins can hold immutable references to the global game state, but can mutate the invented types of guy when they register new types of guy. The plugin state consists of the ID for the plugin and a borrow of the game state. If you're not familiar with the `'a` syntax, that's Rust's way of specifying that the `PluginState` cannot outlive the `GameState` that it references. Finally, our plugin description consists of a name and the path to the plugin on disk.
+We'll give integer identifiers to our plugins so we can track which is which, so we define a `PluginId` type alias. Our game state holds the types of guy that are built in to the game, the ones that are invented by plugins, a map from plugin IDs to plugin descriptions, and the next plugin ID that is going to be allocated (this will increase by one each time a new plugin is registered). We wrap `invented_types_of_guy` in a [`RefCell`](https://doc.rust-lang.org/std/cell/struct.RefCell.html), which moves borrow checking of the `Vec` from compile time to run time. We do this so that plugins can hold immutable references to the global game state, but can mutate the invented types of guy when they register new types of guy. The plugin state consists of the ID for the plugin and a borrow of the game state. If you're not familiar with the `'a` syntax, that's Rust's way of specifying that the `PluginState` cannot outlive the `GameState` that it references. Finally, our plugin description consists of a name and the path to the plugin on disk.
 
 Let's initialize our game state with the built in guys and some reasonable defaults for the other members:
 
@@ -403,7 +402,7 @@ pub fn load_plugins(state: &mut GameState, plugins_dir: &Path) -> wasmtime::Resu
 
 We return an error if the plugins directory doesn't exist. Otherwise, we loop through the entries in the directory and call `load_plugin` for each `.wasm` file.
 
-The `load_plugin` function is responsible for loading the plugin from disk, instantiating a `GPlugin` component from it, calling the plugin's `init` function and storing aside it's name and path:
+The `load_plugin` function is responsible for loading the plugin from disk, instantiating a `Plugin` component from it, calling the plugin's `init` function and storing aside its name and path:
 
 ```rust
 fn load_plugin(
@@ -442,7 +441,7 @@ fn load_plugin(
 }
 ```
 
-`Component::from_file` compiles the Wasm in the given file to machine code with the [Cranelift](https://cranelift.dev/) compiler. We then allocate a plugin ID for the new plugin. The next few lines of code are placed in a block so that the borrow of `state` is dropped before we have to mutably borrow the state to pudate the plugin description map. This block first creates a `Store`, which provides a place to store an instantiated component along with custom state. In this case, our custom state is an instance of `PluginState`. This is the object that is passed to that closure we provided to `add_to_linker` earlier, and which will eventually be passed to our host implementation of `invent_entirely_new_type_of_guy`. After creating the store, we instantiate the component, which resolves the imports of the component and prepares its exports so we can call them from our host. Thanks to `bindgen`, this instantiation returns an object that defines functions for all of the components exports, prefixed with `call_`. We then call the plugin's `init` and `get_plugin_name` functions. Since the call to `get_plugin_name` is the last expression in the block, the entire block evaluates to the plugin name, which we assign to `plugin_name`.
+`Component::from_file` compiles the Wasm in the given file to machine code with the [Cranelift](https://cranelift.dev/) compiler. We then allocate a plugin ID for the new plugin. The next few lines of code are placed in a block so that the borrow of `state` is dropped before we have to mutably borrow the state to mutate the plugin description map. This block first creates a `Store`, which provides a place to store an instantiated component along with custom state. In this case, our custom state is an instance of `PluginState`. This is the object that is passed to that closure we provided to `add_to_linker` earlier, and which will eventually be passed to our host implementation of `invent_entirely_new_type_of_guy`. After creating the store, we instantiate the component, which resolves the imports of the component and prepares its exports so we can call them from our host. Thanks to `bindgen`, this instantiation returns an object that defines functions for all of the component's exports, prefixed with `call_`. We then call the plugin's `init` and `get_plugin_name` functions. Since the call to `get_plugin_name` is the last expression in the block, the entire block evaluates to the plugin name, which we assign to `plugin_name`.
 
 If the plugin had other functions that we needed to call throughout the life of the program, we would keep `store` and `plugin` around, but since in this example we only need them during program initialisation, we just allow their destructors to clean up after us.
 
@@ -483,7 +482,7 @@ To generate a component from the compiled module, we'll use [`wasm-tools`](https
 $ cargo install wasm-tools
 ```
 
-For generating bindings, we'll use [`wit-bindgen`](https://github.com/bytecodealliance/wit-bindgen), which can generate bindings for C, along with a bunch of other languages. As a deeply entrenched C++'er, I would have picked C++ if it were an option, but there isn't yet support for idiomatic C++ bindings (hopefully [soon](https://github.com/bytecodealliance/wit-bindgen/pull/1283)!). You can install this by running:
+For generating bindings, we'll use [`wit-bindgen`](https://github.com/bytecodealliance/wit-bindgen), which can generate bindings for C, along with a bunch of other languages. You can install this by running:
 
 ```bash
 $ cargo install wit-bindgen-cli
